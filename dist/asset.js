@@ -16,21 +16,33 @@ class Asset {
         this.getContract = () => {
             return this.contract;
         };
+        this.getBalance = (code) => __awaiter(this, void 0, void 0, function* () {
+            try {
+                let weiBalance;
+                if (code === "ETH") {
+                    weiBalance = yield this.web3.eth.getBalance(process.env.ACCOUNT);
+                }
+                else {
+                    weiBalance = yield this.getContract()
+                        .methods.balanceOf(process.env.ACCOUNT)
+                        .call();
+                }
+                // @ts-ignore
+                const balance = this.web3.utils.fromWei(weiBalance, "Ether");
+                return { weiBalance, balance };
+            }
+            catch (_) {
+                return { weiBalance: "0", balance: "0" };
+            }
+        });
         // todo: maybe move to wallet?
-        this.checkBalances = () => __awaiter(this, void 0, void 0, function* () {
-            let balance;
-            // Check Ether balance swap
-            balance = yield this.web3.eth.getBalance(process.env.ACCOUNT);
-            // @ts-ignore
-            balance = this.web3.utils.fromWei(balance, "Ether");
-            console.log("Ether Balance:", balance);
-            // Check Dai balance swap
-            balance = yield this.getContract()
-                .methods.balanceOf(process.env.ACCOUNT)
-                .call();
-            // @ts-ignore
-            balance = this.web3.utils.fromWei(balance, "Ether");
-            console.log("Dai Balance:", balance);
+        this.showBalances = () => __awaiter(this, void 0, void 0, function* () {
+            const ethBalance = yield this.getBalance("ETH");
+            console.log("Ether Balance:", ethBalance.balance);
+            console.log("Ether WBalance:", ethBalance.weiBalance);
+            const assetBalance = yield this.getBalance(this.code);
+            console.log("DAI Balance:", assetBalance.balance);
+            console.log("DAI WBalance:", assetBalance.weiBalance);
         });
         this.code = code;
         this.address = address;

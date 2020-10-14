@@ -2,6 +2,11 @@
 import Web3 from "web3";
 import { TOKEN_ABI } from "./abi";
 
+export interface Balance {
+  balance: string;
+  weiBalance: string;
+}
+
 export class Asset {
   code: string;
   address: string;
@@ -23,22 +28,32 @@ export class Asset {
     return this.contract;
   };
 
+  getBalance = async (code: string): Promise<Balance> => {
+    try {
+      let weiBalance;
+      if (code === "ETH") {
+        weiBalance = await this.web3.eth.getBalance(process.env.ACCOUNT);
+      } else {
+        weiBalance = await this.getContract()
+          .methods.balanceOf(process.env.ACCOUNT)
+          .call();
+      }
+      // @ts-ignore
+      const balance = this.web3.utils.fromWei(weiBalance, "Ether");
+      return { weiBalance, balance };
+    } catch (_) {
+      return { weiBalance: "0", balance: "0" };
+    }
+  };
+
   // todo: maybe move to wallet?
-  checkBalances = async () => {
-    let balance;
+  showBalances = async () => {
+    const ethBalance = await this.getBalance("ETH");
+    console.log("Ether Balance:", ethBalance.balance);
+    console.log("Ether WBalance:", ethBalance.weiBalance);
 
-    // Check Ether balance swap
-    balance = await this.web3.eth.getBalance(process.env.ACCOUNT);
-    // @ts-ignore
-    balance = this.web3.utils.fromWei(balance, "Ether");
-    console.log("Ether Balance:", balance);
-
-    // Check Dai balance swap
-    balance = await this.getContract()
-      .methods.balanceOf(process.env.ACCOUNT)
-      .call();
-    // @ts-ignore
-    balance = this.web3.utils.fromWei(balance, "Ether");
-    console.log("Dai Balance:", balance);
+    const assetBalance = await this.getBalance(this.code);
+    console.log("DAI Balance:", assetBalance.balance);
+    console.log("DAI WBalance:", assetBalance.weiBalance);
   };
 }

@@ -21,7 +21,7 @@ import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
 import { Asset } from "./asset";
 import { Uniswap } from "./uniswap";
-import { RSI, Action } from "./oracle";
+import { getFavOracle, Action } from "./oracle";
 
 // initialize configuration
 dotenv.config();
@@ -48,7 +48,7 @@ dai.init();
 const uniswap = new Uniswap(web3);
 uniswap.init(dai);
 
-const oracle = new RSI(web3);
+const oracle = getFavOracle(web3);
 // Minimum eth to swap
 // @ts-ignore
 const ETH_AMOUNT = web3.utils.toWei("0.1", "Ether");
@@ -72,18 +72,28 @@ async function monitorPrice() {
       uniswap
     );
 
-    if (recommendation.action === Action.TRADE) {
-      console.log("Selling Eth...");
-      // Check balance before sale, just to show in console
-      await dai.checkBalances();
-      // Sell Eth
-      await uniswap.sellEth(ETH_AMOUNT, recommendation.price.amount, dai);
-      // Check balances after sale, just to show in console
-      await dai.checkBalances();
-
-      // Stop monitoring prices
-      clearInterval(intervalHandler);
+    if (recommendation.action !== Action.DO_NOTHING) {
+      // Show balance in console
+      await dai.showBalances();
     }
+
+    if (recommendation.action === Action.BUY) {
+      console.log(`Buy ${dai.code}...`);
+      // Sell Eth
+      await uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, dai);
+    } else if (recommendation.action === Action.SELL) {
+      console.log(`Sell ${dai.code}...`);
+      // Sell Eth
+      await uniswap.sellToken(recommendation.price.amount, dai);
+    }
+
+    if (recommendation.action !== Action.DO_NOTHING) {
+      // Show balance in console
+      await dai.showBalances();
+    }
+
+    // Stop monitoring prices
+    // clearInterval(intervalHandler);
   } catch (error) {
     console.error(error);
     waitingProcess = false;

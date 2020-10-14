@@ -47,7 +47,7 @@ const dai = new asset_1.Asset("DAI", "0xad6d458402f60fd3bd25163575031acdce07538d
 dai.init();
 const uniswap = new uniswap_1.Uniswap(web3);
 uniswap.init(dai);
-const oracle = new oracle_1.RSI(web3);
+const oracle = oracle_1.getFavOracle(web3);
 // Minimum eth to swap
 // @ts-ignore
 const ETH_AMOUNT = web3.utils.toWei("0.1", "Ether");
@@ -63,17 +63,26 @@ function monitorPrice() {
         waitingProcess = true;
         try {
             const recommendation = yield oracle.getRecomendation(dai, ETH_AMOUNT, uniswap);
-            if (recommendation.action === oracle_1.Action.TRADE) {
-                console.log("Selling Eth...");
-                // Check balance before sale, just to show in console
-                yield dai.checkBalances();
-                // Sell Eth
-                yield uniswap.sellEth(ETH_AMOUNT, recommendation.price.amount, dai);
-                // Check balances after sale, just to show in console
-                yield dai.checkBalances();
-                // Stop monitoring prices
-                clearInterval(intervalHandler);
+            if (recommendation.action !== oracle_1.Action.DO_NOTHING) {
+                // Show balance in console
+                yield dai.showBalances();
             }
+            if (recommendation.action === oracle_1.Action.BUY) {
+                console.log(`Buy ${dai.code}...`);
+                // Sell Eth
+                yield uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, dai);
+            }
+            else if (recommendation.action === oracle_1.Action.SELL) {
+                console.log(`Sell ${dai.code}...`);
+                // Sell Eth
+                yield uniswap.sellToken(recommendation.price.amount, dai);
+            }
+            if (recommendation.action !== oracle_1.Action.DO_NOTHING) {
+                // Show balance in console
+                yield dai.showBalances();
+            }
+            // Stop monitoring prices
+            // clearInterval(intervalHandler);
         }
         catch (error) {
             console.error(error);

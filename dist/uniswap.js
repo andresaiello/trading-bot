@@ -26,7 +26,7 @@ class Uniswap {
         this.getContract = (asset) => {
             return this.contract;
         };
-        this.sellEth = (ethAmount, tokenAmount, asset) => __awaiter(this, void 0, void 0, function* () {
+        this.buyToken = (ethAmount, tokenAmount, asset) => __awaiter(this, void 0, void 0, function* () {
             const contract = this.getContract(asset);
             // Set Deadline 1 minute from now
             const moment = require("moment"); // import moment.js library
@@ -42,14 +42,58 @@ class Uniswap {
             };
             // Perform Swap
             console.log("Performing swap...");
+            // name: "ethToTokenSwapInput",
+            // outputs: [{ type: "uint256", name: "out" }],
+            // inputs: [
+            //   { type: "uint256", name: "min_tokens" },
+            //   { type: "uint256", name: "deadline" }
+            // ],
             const result = yield contract.methods
                 .ethToTokenSwapInput(tokenAmount.toString(), DEADLINE)
+                .send(SETTINGS);
+            console.log(`Successful Swap: https://ropsten.etherscan.io/tx/${result.transactionHash}`);
+        });
+        this.sellToken = (tokenAmount, asset) => __awaiter(this, void 0, void 0, function* () {
+            console.log(tokenAmount);
+            const contract = this.getContract(asset);
+            // Set Deadline 1 minute from now
+            const moment = require("moment"); // import moment.js library
+            const now = moment().unix(); // fetch current unix timestamp
+            const DEADLINE = now + 60; // add 60 seconds
+            console.log("Deadline", DEADLINE);
+            // Transaction Settings
+            const SETTINGS = {
+                gasLimit: 8000000,
+                gasPrice: this.web3.utils.toWei("50", "Gwei"),
+                from: process.env.ACCOUNT // Use your account here
+                // value: ethAmount // Amount of Ether to Swap
+            };
+            // Perform Swap
+            console.log("Performing swap...");
+            // name: "tokenToEthSwapInput",
+            // outputs: [{ type: "uint256", name: "out" }],
+            // inputs: [
+            //   { type: "uint256", name: "tokens_sold" },
+            //   { type: "uint256", name: "min_eth" },
+            //   { type: "uint256", name: "deadline" }
+            // ],
+            const result = yield contract.methods
+                .tokenToEthSwapInput(tokenAmount.toString(), "000000000000000001", // que poner aca??? min eth que quiero recibir??
+            DEADLINE)
                 .send(SETTINGS);
             console.log(`Successful Swap: https://ropsten.etherscan.io/tx/${result.transactionHash}`);
         });
         this.getEthPrice = (asset, ammount) => __awaiter(this, void 0, void 0, function* () {
             const amount = yield this.getContract(asset)
                 .methods.getEthToTokenInputPrice(ammount)
+                .call();
+            // @ts-ignore
+            const price = this.web3.utils.fromWei(amount.toString(), "Ether");
+            return { amount, price };
+        });
+        this.getTokenPrice = (asset, ammount) => __awaiter(this, void 0, void 0, function* () {
+            const amount = yield this.getContract(asset)
+                .methods.getTokenToEthInputPrice(ammount)
                 .call();
             // @ts-ignore
             const price = this.web3.utils.fromWei(amount.toString(), "Ether");

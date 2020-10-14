@@ -8,22 +8,39 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.RSI = exports.Action = void 0;
+exports.TestOracle = exports.getFavOracle = exports.Action = void 0;
+const bn_js_1 = __importDefault(require("bn.js"));
 var Action;
 (function (Action) {
     Action[Action["DO_NOTHING"] = 0] = "DO_NOTHING";
-    Action[Action["TRADE"] = 1] = "TRADE";
-    Action[Action["TRADE_BACK"] = 2] = "TRADE_BACK";
+    Action[Action["BUY"] = 1] = "BUY";
+    Action[Action["SELL"] = 2] = "SELL";
 })(Action = exports.Action || (exports.Action = {}));
-class RSI {
+exports.getFavOracle = (web3) => {
+    return new TestOracle(web3);
+};
+class TestOracle {
     constructor(web3) {
         this.getRecomendation = (asset, amount, uniswap) => __awaiter(this, void 0, void 0, function* () {
+            const balance = yield asset.getBalance(asset.code);
+            // Check token Price
+            const tokenPrice = yield uniswap.getTokenPrice(asset, new bn_js_1.default(balance.weiBalance));
+            console.log(`Token Price: ${tokenPrice.amount} ${tokenPrice.price} ${asset.code}`);
             // Check Eth Price
             const price = yield uniswap.getEthPrice(asset, amount);
-            console.log(`Eth Price: ${price} ${asset.code}`);
+            console.log(`Eth Price: ${price.amount} ${price.price} ${asset.code}`);
+            // @ts-ignore
+            const zero = this.web3.utils.toWei("0", "Ether");
+            if (balance.weiBalance > zero) {
+                return { action: Action.SELL, price: tokenPrice };
+            }
             if (price.price <= this.ETH_SELL_PRICE) {
-                return { action: Action.TRADE, price };
+                console.log(`Token Price: ${price.amount} ${price.price} ${asset.code}`);
+                return { action: Action.BUY, price };
             }
             else {
                 return { action: Action.DO_NOTHING };
@@ -31,8 +48,8 @@ class RSI {
         });
         this.web3 = web3;
         // @ts-ignore
-        this.ETH_SELL_PRICE = web3.utils.toWei("400", "Ether"); // 200 Dai a.k.a. $200 USD
+        this.ETH_SELL_PRICE = web3.utils.toWei("400", "Ether"); // 400 Dai a.k.a. $400 USD
     }
 }
-exports.RSI = RSI;
+exports.TestOracle = TestOracle;
 //# sourceMappingURL=oracle.js.map
