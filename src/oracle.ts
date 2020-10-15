@@ -51,10 +51,7 @@ export class TestOracle implements Oracle {
     const balance = await asset.getBalance(asset.code);
 
     // Check token Price
-    const tokenPrice = await uniswap.getTokenPrice(
-      asset,
-      new BN(balance.weiBalance)
-    );
+    const tokenPrice = await uniswap.getTokenPrice(asset, new BN("1"));
     console.log(`Token Price: ${tokenPrice.amount} ${tokenPrice.price} ETH`);
 
     // Check Eth Price

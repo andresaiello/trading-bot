@@ -8,3 +8,4 @@ logs
 examples/*
 examples
 dist/*
+dist

@@ -86,7 +86,7 @@ async function monitorPrice() {
       await uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, dai);
     } else if (recommendation.action === Action.SELL) {
       console.log(`Sell ${dai.code}...`);
-      // await uniswap.approveToken(recommendation.price.amount, dai);
+      await uniswap.approveToken(recommendation.price.amount, dai);
       await uniswap.sellToken(recommendation.price.amount, dai);
     }
 

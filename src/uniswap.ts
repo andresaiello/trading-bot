@@ -6,6 +6,8 @@ import { Asset } from "./asset";
 
 // todo: check this value in mainnet
 const WETH = "0xc778417E063141139Fce010982780140Aa0cD5Ab";
+const MAX_AMOUNT_TO_SELL =
+  "115792089237316195423570985008687907853269984665640564039457584007913129639935";
 export interface Price {
   price: string;
   amount: string;
@@ -72,10 +74,7 @@ export class Uniswap {
     // Perform Swap
     console.log("Approving swap...");
     const result = await contract.methods
-      .approve(
-        asset.uniswapSell,
-        "115792089237316195423570985008687907853269984665640564039457584007913129639935"
-      )
+      .approve(asset.uniswapSell, MAX_AMOUNT_TO_SELL)
       .send(this.getSetting());
 
     console.log(
@@ -93,7 +92,7 @@ export class Uniswap {
     console.log("Performing swap...");
     const result = await contract.methods
       .swapExactTokensForETH(
-        "10000000000000000000", // tokenAmount.toString(),
+        tokenAmount.toString(),
         "22366615421203459", // que poner aca??? min eth que quiero recibir??
         [asset.address, WETH], // always weth
         process.env.ACCOUNT,
