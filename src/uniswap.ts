@@ -1,8 +1,11 @@
 // @ts-ignore
 import Web3 from "web3";
-import { EXCHANGE_ABI } from "./abi";
+import { EXCHANGE_ABI } from "./abis/daiUniswapAbi";
+import { TOKEN_ABI } from "./abis/daiAbi";
 import { Asset } from "./asset";
 
+// todo: check this value in mainnet
+const WETH = "0xc778417E063141139Fce010982780140Aa0cD5Ab";
 export interface Price {
   price: string;
   amount: string;
@@ -12,101 +15,91 @@ export interface Price {
 export class Uniswap {
   private web3: Web3;
   private contract: any;
+  private proxyContract: any;
 
   constructor(web3: Web3) {
     this.web3 = web3;
   }
-
-  private getContractAddress = (asset: Asset) => {
-    if (asset.code === "DAI") {
-      // Ropsten Uniswap Dai Exchange: https://ropsten.etherscan.io/address/0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0
-      return "0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0";
-    } else {
-      return "0x0";
-    }
-  };
 
   // todo: take asset as param and add contract to a contract list
   init(asset: Asset) {
     this.contract = new this.web3.eth.Contract(
       // @ts-ignore
       EXCHANGE_ABI,
-      this.getContractAddress(asset)
+      asset.uniswapBuy
+    );
+    this.proxyContract = new this.web3.eth.Contract(
+      // @ts-ignore
+      TOKEN_ABI,
+      asset.uniswapSell
     );
   }
 
+  // todo: add a list to return a contract per asset
   getContract = (asset: Asset) => {
     return this.contract;
   };
 
   buyToken = async (ethAmount: string, tokenAmount: string, asset: Asset) => {
+    console.log(
+      "Buy ",
+      asset.code,
+      " ETH: ",
+      ethAmount,
+      ", ",
+      asset.code,
+      ": ",
+      tokenAmount
+    );
     const contract = this.getContract(asset);
-    // Set Deadline 1 minute from now
-    const moment = require("moment"); // import moment.js library
-    const now = moment().unix(); // fetch current unix timestamp
-    const DEADLINE = now + 60; // add 60 seconds
-    console.log("Deadline", DEADLINE);
-
-    // Transaction Settings
-    const SETTINGS = {
-      gasLimit: 8000000, // Override gas settings: https://github.com/ethers-io/ethers.js/issues/469
-      gasPrice: this.web3.utils.toWei("50", "Gwei"),
-      from: process.env.ACCOUNT, // Use your account here
-      value: ethAmount // Amount of Ether to Swap
-    };
+    const defaultSetting = this.getSetting();
 
     // Perform Swap
     console.log("Performing swap...");
-    // name: "ethToTokenSwapInput",
-    // outputs: [{ type: "uint256", name: "out" }],
-    // inputs: [
-    //   { type: "uint256", name: "min_tokens" },
-    //   { type: "uint256", name: "deadline" }
-    // ],
-
     const result = await contract.methods
-      .ethToTokenSwapInput(tokenAmount.toString(), DEADLINE)
-      .send(SETTINGS);
+      .ethToTokenSwapInput(tokenAmount.toString(), this.getDeadline())
+      .send({ ...defaultSetting, value: ethAmount });
     console.log(
       `Successful Swap: https://ropsten.etherscan.io/tx/${result.transactionHash}`
     );
   };
 
+  // todo: add min eth to buy
+  approveToken = async (tokenAmount: string, asset: Asset) => {
+    console.log("Approve ", asset.code);
+    const contract = asset.getContract();
+
+    // Perform Swap
+    console.log("Approving swap...");
+    const result = await contract.methods
+      .approve(
+        asset.uniswapSell,
+        "115792089237316195423570985008687907853269984665640564039457584007913129639935"
+      )
+      .send(this.getSetting());
+
+    console.log(
+      `Successful approve: https://ropsten.etherscan.io/tx/${result.transactionHash}`
+    );
+  };
+
+  // todo: add min eth to buy
   sellToken = async (tokenAmount: string, asset: Asset) => {
-    console.log(tokenAmount);
+    console.log("Sell ", asset.code, ": ", tokenAmount);
 
-    const contract = this.getContract(asset);
-    // Set Deadline 1 minute from now
-    const moment = require("moment"); // import moment.js library
-    const now = moment().unix(); // fetch current unix timestamp
-    const DEADLINE = now + 60; // add 60 seconds
-    console.log("Deadline", DEADLINE);
-
-    // Transaction Settings
-    const SETTINGS = {
-      gasLimit: 8000000, // Override gas settings: https://github.com/ethers-io/ethers.js/issues/469
-      gasPrice: this.web3.utils.toWei("50", "Gwei"),
-      from: process.env.ACCOUNT // Use your account here
-      // value: ethAmount // Amount of Ether to Swap
-    };
+    const contract = this.proxyContract;
 
     // Perform Swap
     console.log("Performing swap...");
-    // name: "tokenToEthSwapInput",
-    // outputs: [{ type: "uint256", name: "out" }],
-    // inputs: [
-    //   { type: "uint256", name: "tokens_sold" },
-    //   { type: "uint256", name: "min_eth" },
-    //   { type: "uint256", name: "deadline" }
-    // ],
-
     const result = await contract.methods
-      .tokenToEthSwapInput(
-        tokenAmount.toString(),
-        "000000000000000001", // que poner aca??? min eth que quiero recibir??
-        DEADLINE
+      .swapExactTokensForETH(
+        "10000000000000000000", // tokenAmount.toString(),
+        "22366615421203459", // que poner aca??? min eth que quiero recibir??
+        [asset.address, WETH], // always weth
+        process.env.ACCOUNT,
+        this.getDeadline()
       )
-      .send(SETTINGS);
+      .send(this.getSetting());
 
     console.log(
       `Successful Swap: https://ropsten.etherscan.io/tx/${result.transactionHash}`
@@ -130,5 +123,21 @@ export class Uniswap {
     const price = this.web3.utils.fromWei(amount.toString(), "Ether");
 
     return { amount, price };
+  };
+
+  private getDeadline = () => {
+    // Set Deadline 10 minute from now
+    const moment = require("moment"); // import moment.js library
+    const now = moment().unix(); // fetch current unix timestamp
+    return now + 60 * 10; // add 60 seconds
+  };
+
+  private getSetting = () => {
+    // Transaction Settings
+    return {
+      gasLimit: 8000000, // Override gas settings: https://github.com/ethers-io/ethers.js/issues/469
+      gasPrice: this.web3.utils.toWei("50", "Gwei"),
+      from: process.env.ACCOUNT // Use your account here
+    };
   };
 }

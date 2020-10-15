@@ -22,6 +22,8 @@ import HDWalletProvider from "@truffle/hdwallet-provider";
 import { Asset } from "./asset";
 import { Uniswap } from "./uniswap";
 import { getFavOracle, Action } from "./oracle";
+// @ts-ignore
+import EthTx from "ethereumjs-tx";
 
 // initialize configuration
 dotenv.config();
@@ -40,7 +42,9 @@ const web3 = new Web3(
 
 const dai = new Asset(
   "DAI",
-  "0xad6d458402f60fd3bd25163575031acdce07538d",
+  "0xad6d458402f60fd3bd25163575031acdce07538d", // Token address
+  "0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0", // Ropsten Uniswap eth->dai: https://ropsten.etherscan.io/address/0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0
+  "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // UniswapV2Router02 Dai->eth
   web3
 );
 dai.init();
@@ -51,7 +55,7 @@ uniswap.init(dai);
 const oracle = getFavOracle(web3);
 // Minimum eth to swap
 // @ts-ignore
-const ETH_AMOUNT = web3.utils.toWei("0.1", "Ether");
+const ETH_AMOUNT = web3.utils.toWei("0.25", "Ether");
 console.log("Eth Amount", ETH_AMOUNT);
 
 let intervalHandler: any;
@@ -79,11 +83,10 @@ async function monitorPrice() {
 
     if (recommendation.action === Action.BUY) {
       console.log(`Buy ${dai.code}...`);
-      // Sell Eth
       await uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, dai);
     } else if (recommendation.action === Action.SELL) {
       console.log(`Sell ${dai.code}...`);
-      // Sell Eth
+      // await uniswap.approveToken(recommendation.price.amount, dai);
       await uniswap.sellToken(recommendation.price.amount, dai);
     }
 

@@ -1,6 +1,6 @@
 // @ts-ignore
 import Web3 from "web3";
-import { TOKEN_ABI } from "./abi";
+import { TOKEN_ABI } from "./abis/daiAbi";
 
 export interface Balance {
   balance: string;
@@ -10,12 +10,22 @@ export interface Balance {
 export class Asset {
   code: string;
   address: string;
+  uniswapBuy: string; // todo: this should be here, should be in a decorator to be multi exchange compliance
+  uniswapSell: string; // todo: this should be here, should be in a decorator to be multi exchange compliance
   private web3: Web3;
   private contract: any;
 
-  constructor(code: string, address: string, web3: Web3) {
+  constructor(
+    code: string,
+    address: string,
+    uniswapBuy: string,
+    uniswapSell: string,
+    web3: Web3
+  ) {
     this.code = code;
     this.address = address;
+    this.uniswapBuy = uniswapBuy;
+    this.uniswapSell = uniswapSell;
     this.web3 = web3;
   }
 
@@ -26,6 +36,10 @@ export class Asset {
 
   getContract = () => {
     return this.contract;
+  };
+
+  getAbi = () => {
+    return TOKEN_ABI;
   };
 
   getBalance = async (code: string): Promise<Balance> => {

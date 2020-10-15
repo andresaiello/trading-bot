@@ -55,9 +55,7 @@ export class TestOracle implements Oracle {
       asset,
       new BN(balance.weiBalance)
     );
-    console.log(
-      `Token Price: ${tokenPrice.amount} ${tokenPrice.price} ${asset.code}`
-    );
+    console.log(`Token Price: ${tokenPrice.amount} ${tokenPrice.price} ETH`);
 
     // Check Eth Price
     const price = await uniswap.getEthPrice(asset, amount);
@@ -66,7 +64,10 @@ export class TestOracle implements Oracle {
     // @ts-ignore
     const zero = this.web3.utils.toWei("0", "Ether");
     if (balance.weiBalance > zero) {
-      return { action: Action.SELL, price: tokenPrice };
+      return {
+        action: Action.SELL,
+        price: { amount: balance.weiBalance, price: tokenPrice.price }
+      };
     }
 
     if (price.price <= this.ETH_SELL_PRICE) {
