@@ -169,7 +169,7 @@ export class Uniswap {
     if (!isEmptyBalance(tokenBalance)) {
       tokenAllToEth = await this.getTokenPrice(token, tokenBalance.weiBalance);
       console.log(
-        `${tokenBalance.balance} ${token.code} -> ${tokenToEth.price} ETH`
+        `${tokenBalance.balance} ${token.code} -> ${tokenAllToEth.price} ETH`
       );
     }
 

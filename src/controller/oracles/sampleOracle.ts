@@ -30,7 +30,7 @@ export class SampleOracle implements Oracle {
     priceCollection: PriceCollection,
     amount: string
   ): Promise<Recomendatiton> => {
-    //return { action: Action.DO_NOTHING };
+    // return { action: Action.DO_NOTHING };
     const balance = wallet.getBalance(asset);
 
     if (!isEmptyBalance(balance)) {
