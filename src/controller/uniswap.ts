@@ -1,6 +1,6 @@
 // @ts-ignore
 import Web3 from "web3";
-import { EXCHANGE_ABI } from "../abis/daiUniswapAbi";
+import { EXCHANGE_ABI } from "../abis/uniswapAbi";
 import { TOKEN_ABI } from "../abis/erc20Abi";
 import { Token } from "./token";
 import { getConfig, getNetworkPrefix } from "../config";
