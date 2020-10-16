@@ -19,11 +19,12 @@ import http from "http";
 // @ts-ignore
 import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
-import { Asset } from "./asset";
-import { Uniswap } from "./uniswap";
-import { getFavOracle, Action } from "./oracle";
-// @ts-ignore
-import EthTx from "ethereumjs-tx";
+import { Token } from "./controller/token";
+import { Uniswap } from "./controller/uniswap";
+import { Action } from "./model/oracle";
+import { getDefaultOracle } from "./controller/oracles/oracle";
+import { Wallet, CryptoWallet } from "./model/wallet";
+import { getConfig } from "./config";
 
 // initialize configuration
 dotenv.config();
@@ -40,19 +41,24 @@ const web3 = new Web3(
   new HDWalletProvider(process.env.PRIVATE_KEY, process.env.RPC_URL)
 );
 
-const dai = new Asset(
+const eth = new Token("ETH");
+
+const dai = new Token(
   "DAI",
-  "0xad6d458402f60fd3bd25163575031acdce07538d", // Token address
-  "0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0", // Ropsten Uniswap eth->dai: https://ropsten.etherscan.io/address/0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0
-  "0x7a250d5630b4cf539739df2c5dacb4c659f2488d", // UniswapV2Router02 Dai->eth
+  getConfig().DAI_CONTRACT, // Token address
+  getConfig().DAI_SWAP, // Ropsten Uniswap eth->dai: https://ropsten.etherscan.io/address/0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0
   web3
 );
 dai.init();
 
+const wallet: Wallet = new CryptoWallet(web3);
+wallet.add(eth);
+wallet.add(dai);
+
 const uniswap = new Uniswap(web3);
 uniswap.init(dai);
 
-const oracle = getFavOracle(web3);
+const oracle = getDefaultOracle(web3);
 // Minimum eth to swap
 // @ts-ignore
 const ETH_AMOUNT = web3.utils.toWei("0.25", "Ether");
@@ -70,7 +76,10 @@ async function monitorPrice() {
   waitingProcess = true;
 
   try {
+    await wallet.fetchBalances();
+
     const recommendation = await oracle.getRecomendation(
+      wallet,
       dai,
       ETH_AMOUNT,
       uniswap
@@ -78,7 +87,7 @@ async function monitorPrice() {
 
     if (recommendation.action !== Action.DO_NOTHING) {
       // Show balance in console
-      await dai.showBalances();
+      await wallet.showBalances();
     }
 
     if (recommendation.action === Action.BUY) {
@@ -92,7 +101,7 @@ async function monitorPrice() {
 
     if (recommendation.action !== Action.DO_NOTHING) {
       // Show balance in console
-      await dai.showBalances();
+      await wallet.showBalances();
     }
 
     // Stop monitoring prices
