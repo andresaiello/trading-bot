@@ -19,15 +19,12 @@ import http from "http";
 // @ts-ignore
 import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
-import BN from "bn.js";
 import { Token } from "./controller/token";
 import { Uniswap } from "./controller/uniswap";
 import { Action } from "./model/oracle";
 import { getDefaultOracle } from "./controller/oracles/oracle";
 import { Wallet, CryptoWallet } from "./model/wallet";
 import { getConfig } from "./config";
-import { PriceCollection } from "./model/price";
-import { isEmptyBalance, EMPTY_BALANCE } from "./model/balance";
 
 // initialize configuration
 dotenv.config();

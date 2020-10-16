@@ -1,6 +1,5 @@
 // @ts-ignore
 import Web3 from "web3";
-import BN from "bn.js";
 import { EXCHANGE_ABI } from "../abis/uniswapAbi";
 import { TOKEN_ABI } from "../abis/erc20Abi";
 import { Token } from "./token";
@@ -141,6 +140,7 @@ export class Uniswap {
     };
   };
 
+  // Return eth->token, token->eth, per unit and per balance
   getPriceCollection = async (
     wallet: Wallet,
     token: Token,
@@ -163,7 +163,7 @@ export class Uniswap {
     );
 
     const tokenBalance = wallet.getBalance(token);
-    tokenToEth = await this.getTokenPrice(token, new BN("100"));
+    tokenToEth = await this.getTokenPrice(token, this.web3.utils.toWei("100"));
     console.log(`100 ${token.code} -> ${tokenToEth.price} ETH`);
 
     if (!isEmptyBalance(tokenBalance)) {
