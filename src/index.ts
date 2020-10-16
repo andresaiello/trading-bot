@@ -107,6 +107,7 @@ async function monitorPrice() {
     }
 
     if (recommendation.action !== Action.DO_NOTHING) {
+      await wallet.fetchBalances();
       // Show balance in console
       await wallet.showBalances();
     }

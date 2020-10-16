@@ -43,7 +43,13 @@ export class SampleOracle implements Oracle {
       };
     }
 
-    return { action: Action.BUY, price: priceCollection.ethToToken };
+    return {
+      action: Action.BUY,
+      price: {
+        amount,
+        price: priceCollection.ethToToken.price // todo: upadate this to check the real value price * amount
+      }
+    };
     // if (price.price <= this.ETH_SELL_PRICE) {
     //   // console.log(`Token Price: ${price.amount} ${price.price} ${asset.code}`);
 
