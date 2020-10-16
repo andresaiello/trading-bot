@@ -19,12 +19,15 @@ import http from "http";
 // @ts-ignore
 import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
+import BN from "bn.js";
 import { Token } from "./controller/token";
 import { Uniswap } from "./controller/uniswap";
 import { Action } from "./model/oracle";
 import { getDefaultOracle } from "./controller/oracles/oracle";
 import { Wallet, CryptoWallet } from "./model/wallet";
 import { getConfig } from "./config";
+import { PriceCollection } from "./model/price";
+import { isEmptyBalance, EMPTY_BALANCE } from "./model/balance";
 
 // initialize configuration
 dotenv.config();
@@ -77,12 +80,19 @@ async function monitorPrice() {
 
   try {
     await wallet.fetchBalances();
+    const token = dai;
+
+    const priceCollection = await uniswap.getPriceCollection(
+      wallet,
+      token,
+      eth
+    );
 
     const recommendation = await oracle.getRecomendation(
       wallet,
-      dai,
-      ETH_AMOUNT,
-      uniswap
+      token,
+      priceCollection,
+      ETH_AMOUNT
     );
 
     if (recommendation.action !== Action.DO_NOTHING) {
@@ -91,12 +101,12 @@ async function monitorPrice() {
     }
 
     if (recommendation.action === Action.BUY) {
-      console.log(`Buy ${dai.code}...`);
-      await uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, dai);
+      console.log(`Buy ${token.code}...`);
+      await uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, token);
     } else if (recommendation.action === Action.SELL) {
-      console.log(`Sell ${dai.code}...`);
-      await uniswap.approveToken(recommendation.price.amount, dai);
-      await uniswap.sellToken(recommendation.price.amount, dai);
+      console.log(`Sell ${token.code}...`);
+      await uniswap.approveToken(recommendation.price.amount, token);
+      await uniswap.sellToken(recommendation.price.amount, token);
     }
 
     if (recommendation.action !== Action.DO_NOTHING) {

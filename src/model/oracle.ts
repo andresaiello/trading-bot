@@ -1,16 +1,11 @@
 import { Token } from "../controller/token";
-import { Uniswap } from "../controller/uniswap";
 import { Wallet } from "./wallet";
+import { Price, PriceCollection } from "./price";
 
 export enum Action {
   DO_NOTHING,
   BUY,
   SELL
-}
-
-export interface Price {
-  price: string;
-  amount: string;
 }
 
 export interface Recomendatiton {
@@ -22,7 +17,7 @@ export interface Oracle {
   getRecomendation: (
     wallet: Wallet,
     asset: Token,
-    amount: string,
-    uniswap: Uniswap
+    priceCollection: PriceCollection,
+    amount: string
   ) => Promise<Recomendatiton>;
 }

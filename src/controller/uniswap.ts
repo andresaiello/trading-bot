@@ -1,14 +1,13 @@
 // @ts-ignore
 import Web3 from "web3";
+import BN from "bn.js";
 import { EXCHANGE_ABI } from "../abis/uniswapAbi";
 import { TOKEN_ABI } from "../abis/erc20Abi";
 import { Token } from "./token";
 import { getConfig, getNetworkPrefix } from "../config";
-
-export interface Price {
-  price: string;
-  amount: string;
-}
+import { Price, PriceCollection } from "../model/price";
+import { Wallet } from "../model/wallet";
+import { isEmptyBalance } from "../model/balance";
 
 // todo: generalize to exchange
 export class Uniswap {
@@ -107,18 +106,18 @@ export class Uniswap {
     );
   };
 
-  getEthPrice = async (asset: Token, ammount: any): Promise<Price> => {
+  getEthPrice = async (asset: Token, input: any): Promise<Price> => {
     const amount = await this.getContract(asset)
-      .methods.getEthToTokenInputPrice(ammount)
+      .methods.getEthToTokenInputPrice(input)
       .call();
     // @ts-ignore
     const price = this.web3.utils.fromWei(amount.toString(), "Ether");
     return { amount, price };
   };
 
-  getTokenPrice = async (asset: Token, ammount: any): Promise<Price> => {
+  getTokenPrice = async (asset: Token, input: any): Promise<Price> => {
     const amount = await this.getContract(asset)
-      .methods.getTokenToEthInputPrice(ammount)
+      .methods.getTokenToEthInputPrice(input)
       .call();
     // @ts-ignore
     const price = this.web3.utils.fromWei(amount.toString(), "Ether");
@@ -139,6 +138,46 @@ export class Uniswap {
       gasLimit: 8000000, // Override gas settings: https://github.com/ethers-io/ethers.js/issues/469
       gasPrice: this.web3.utils.toWei("80", "Gwei"),
       from: process.env.ACCOUNT // Use your account here
+    };
+  };
+
+  getPriceCollection = async (
+    wallet: Wallet,
+    token: Token,
+    ethToken: Token
+  ): Promise<PriceCollection> => {
+    let ethToToken = { amount: "0", price: "0" };
+    let ethAllToToken = { amount: "0", price: "0" };
+    let tokenToEth = { amount: "0", price: "0" };
+    let tokenAllToEth = { amount: "0", price: "0" };
+
+    const ethBalance = wallet.getBalance(ethToken);
+    console.log(`Eth Balance: ${ethBalance.weiBalance}`);
+
+    ethToToken = await this.getEthPrice(token, this.web3.utils.toWei("1"));
+    console.log(`1 ETH -> ${ethToToken.price}${token.code}`);
+
+    ethAllToToken = await this.getEthPrice(token, ethBalance.weiBalance);
+    console.log(
+      `${ethBalance.balance} ETH -> ${ethAllToToken.price}${token.code}`
+    );
+
+    const tokenBalance = wallet.getBalance(token);
+    tokenToEth = await this.getTokenPrice(token, new BN("100"));
+    console.log(`100 ${token.code} -> ${tokenToEth.price} ETH`);
+
+    if (!isEmptyBalance(tokenBalance)) {
+      tokenAllToEth = await this.getTokenPrice(token, tokenBalance.weiBalance);
+      console.log(
+        `${tokenBalance.balance} ${token.code} -> ${tokenToEth.price} ETH`
+      );
+    }
+
+    return {
+      ethToToken,
+      ethAllToToken,
+      tokenToEth,
+      tokenAllToEth
     };
   };
 }

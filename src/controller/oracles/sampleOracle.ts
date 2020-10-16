@@ -1,10 +1,11 @@
 // @ts-ignore
 import Web3 from "web3";
-import BN from "bn.js";
 import { Oracle, Recomendatiton } from "../../model/oracle";
 import { Wallet } from "../../model/wallet";
 import { Token } from "../token";
 import { Uniswap } from "../uniswap";
+import { isEmptyBalance } from "../../model/balance";
+import { PriceCollection } from "../../model/price";
 
 export enum Action {
   DO_NOTHING,
@@ -26,30 +27,23 @@ export class SampleOracle implements Oracle {
   getRecomendation = async (
     wallet: Wallet,
     asset: Token,
-    amount: string,
-    uniswap: Uniswap
+    priceCollection: PriceCollection,
+    amount: string
   ): Promise<Recomendatiton> => {
+    //return { action: Action.DO_NOTHING };
     const balance = wallet.getBalance(asset);
 
-    // Check Eth Price
-    const price = await uniswap.getEthPrice(asset, amount);
-    console.log(`Eth Price: ${price.amount} ${price.price} ${asset.code}`);
-
-    // @ts-ignore
-    const zero = this.web3.utils.toWei("0", "Ether");
-    if (balance.weiBalance > zero) {
-      // Check token Price
-      // const tokenPrice = await uniswap.getTokenPrice(asset, new BN("1"));
-      const tokenPrice = await uniswap.getTokenPrice(asset, balance.weiBalance);
-      console.log(`Token Price: ${tokenPrice.amount} ${tokenPrice.price} ETH`);
-
+    if (!isEmptyBalance(balance)) {
       return {
         action: Action.SELL,
-        price: { amount: balance.weiBalance, price: tokenPrice.price }
+        price: {
+          amount: balance.weiBalance,
+          price: priceCollection.tokenAllToEth.price
+        }
       };
     }
 
-    return { action: Action.BUY, price };
+    return { action: Action.BUY, price: priceCollection.ethToToken };
     // if (price.price <= this.ETH_SELL_PRICE) {
     //   // console.log(`Token Price: ${price.amount} ${price.price} ${asset.code}`);
 
