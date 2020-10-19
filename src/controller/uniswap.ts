@@ -1,7 +1,6 @@
 // @ts-ignore
 import Web3 from "web3";
-import { EXCHANGE_ABI } from "../abis/uniswapAbi";
-import { TOKEN_ABI } from "../abis/erc20Abi";
+import { UNISWAP_V2_ABI } from "../abis/uniswapV2Abi";
 import { Token } from "./token";
 import { getConfig, getNetworkPrefix } from "../config";
 import { Price, PriceCollection } from "../model/price";
@@ -11,7 +10,7 @@ import { isEmptyBalance } from "../model/balance";
 // todo: generalize to exchange
 export class Uniswap {
   private web3: Web3;
-  private contract: any;
+  // private contract: any;
   private proxyContract: any;
 
   constructor(web3: Web3) {
@@ -19,23 +18,13 @@ export class Uniswap {
   }
 
   // todo: take asset as param and add contract to a contract list
-  init(asset: Token) {
-    this.contract = new this.web3.eth.Contract(
-      // @ts-ignore
-      EXCHANGE_ABI,
-      asset.uniswapBuy
-    );
+  init() {
     this.proxyContract = new this.web3.eth.Contract(
       // @ts-ignore
-      TOKEN_ABI,
+      UNISWAP_V2_ABI,
       getConfig().UNI_ROUTER
     );
   }
-
-  // todo: add a list to return a contract per asset
-  getContract = (asset: Token) => {
-    return this.contract;
-  };
 
   buyToken = async (ethAmount: string, tokenAmount: string, asset: Token) => {
     console.log(
@@ -48,14 +37,19 @@ export class Uniswap {
       ": ",
       tokenAmount
     );
-    const contract = this.getContract(asset);
-    const defaultSetting = this.getSetting();
+    const contract = this.proxyContract;
 
+    const settings = { ...this.getSetting(), value: ethAmount };
     // Perform Swap
     console.log("Performing swap...");
     const result = await contract.methods
-      .ethToTokenSwapInput(tokenAmount.toString(), this.getDeadline())
-      .send({ ...defaultSetting, value: ethAmount });
+      .swapExactETHForTokens(
+        "22366615421203459", // que poner aca??? min eth que quiero recibir??
+        [getConfig().WETH, asset.address], // always weth
+        process.env.ACCOUNT,
+        this.getDeadline()
+      )
+      .send(settings);
     console.log(
       `Successful Swap: https://${getNetworkPrefix()}etherscan.io/tx/${
         result.transactionHash
@@ -106,22 +100,28 @@ export class Uniswap {
   };
 
   getEthPrice = async (asset: Token, input: any): Promise<Price> => {
-    const amount = await this.getContract(asset)
-      .methods.getEthToTokenInputPrice(input)
-      .call();
-    // @ts-ignore
-    const price = this.web3.utils.fromWei(amount.toString(), "Ether");
-    return { amount, price };
+    // const amount = await this.getContract(asset)
+    //   .methods.getAmountIn(
+    //     input,
+    //     "10696163742708941807",
+    //     "10696163742708941807"
+    //   )
+    //   .call();
+    // // @ts-ignore
+    // const price = this.web3.utils.fromWei(amount.toString(), "Ether");
+    // return { amount, price };
+    return { amount: "0", price: "0" };
   };
 
   getTokenPrice = async (asset: Token, input: any): Promise<Price> => {
-    const amount = await this.getContract(asset)
-      .methods.getTokenToEthInputPrice(input)
-      .call();
-    // @ts-ignore
-    const price = this.web3.utils.fromWei(amount.toString(), "Ether");
+    // const amount = await this.getContract(asset)
+    //   .methods.getTokenToEthInputPrice(input)
+    //   .call();
+    // // @ts-ignore
+    // const price = this.web3.utils.fromWei(amount.toString(), "Ether");
 
-    return { amount, price };
+    // return { amount, price };
+    return { amount: "0", price: "0" };
   };
 
   private getDeadline = () => {

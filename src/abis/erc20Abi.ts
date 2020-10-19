@@ -161,20 +161,5 @@ export const TOKEN_ABI = [
     ],
     name: "Transfer",
     type: "event"
-  },
-  {
-    name: "swapExactTokensForETH",
-    outputs: [{ type: "uint256", name: "out" }],
-    inputs: [
-      { type: "uint256", name: "amountIn" },
-      { type: "uint256", name: "amountOutMin" },
-      { type: "address[]", name: "path" },
-      { type: "address", name: "to" },
-      { type: "uint256", name: "deadline" }
-    ],
-    constant: !1,
-    payable: !1,
-    type: "function",
-    gas: 47503
   }
 ];

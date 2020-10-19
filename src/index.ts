@@ -25,6 +25,7 @@ import { Action } from "./model/oracle";
 import { getDefaultOracle } from "./controller/oracles/oracle";
 import { Wallet, CryptoWallet } from "./model/wallet";
 import { getConfig } from "./config";
+import { PriceCollection } from "./model/price";
 
 // initialize configuration
 dotenv.config();
@@ -46,7 +47,6 @@ const eth = new Token("ETH");
 const dai = new Token(
   "DAI",
   getConfig().DAI_CONTRACT, // Token address
-  getConfig().DAI_SWAP, // Ropsten Uniswap eth->dai: https://ropsten.etherscan.io/address/0xc0fc958f7108be4060F33a699a92d3ea49b0B5f0
   web3
 );
 dai.init();
@@ -56,7 +56,7 @@ wallet.add(eth);
 wallet.add(dai);
 
 const uniswap = new Uniswap(web3);
-uniswap.init(dai);
+uniswap.init();
 
 const oracle = getDefaultOracle(web3);
 // Minimum eth to swap
@@ -79,11 +79,12 @@ async function monitorPrice() {
     await wallet.fetchBalances();
     const token = dai;
 
-    const priceCollection = await uniswap.getPriceCollection(
-      wallet,
-      token,
-      eth
-    );
+    // const priceCollection = await uniswap.getPriceCollection(
+    //   wallet,
+    //   token,
+    //   eth
+    // );
+    const priceCollection: PriceCollection = undefined;
 
     const recommendation = await oracle.getRecomendation(
       wallet,

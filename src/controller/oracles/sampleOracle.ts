@@ -31,7 +31,13 @@ export class SampleOracle implements Oracle {
     amount: string
   ): Promise<Recomendatiton> => {
     if (process.env.ENV === "prod") {
-      return { action: Action.DO_NOTHING };
+      return {
+        action: Action.DO_NOTHING,
+        price: {
+          amount,
+          price: "0"
+        }
+      };
     }
 
     const balance = wallet.getBalance(asset);
@@ -41,7 +47,7 @@ export class SampleOracle implements Oracle {
         action: Action.SELL,
         price: {
           amount: balance.weiBalance,
-          price: priceCollection.tokenAllToEth.price
+          price: priceCollection?.tokenAllToEth?.price
         }
       };
     }
@@ -50,7 +56,7 @@ export class SampleOracle implements Oracle {
       action: Action.BUY,
       price: {
         amount,
-        price: priceCollection.ethToToken.price // todo: upadate this to check the real value price * amount
+        price: priceCollection?.ethToToken?.price // todo: upadate this to check the real value price * amount
       }
     };
     // if (price.price <= this.ETH_SELL_PRICE) {
