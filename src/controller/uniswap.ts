@@ -6,6 +6,7 @@ import { getConfig, getNetworkPrefix } from "../config";
 import { Price, PriceCollection } from "../model/price";
 import { Wallet } from "../model/wallet";
 import { isEmptyBalance } from "../model/balance";
+import { ChainId, Token as TokenUni, WETH, Fetcher, Route } from "@uniswap/sdk";
 
 // todo: generalize to exchange
 export class Uniswap {
@@ -99,29 +100,29 @@ export class Uniswap {
     );
   };
 
-  getEthPrice = async (asset: Token, input: any): Promise<Price> => {
-    // const amount = await this.getContract(asset)
-    //   .methods.getAmountIn(
-    //     input,
-    //     "10696163742708941807",
-    //     "10696163742708941807"
-    //   )
-    //   .call();
-    // // @ts-ignore
-    // const price = this.web3.utils.fromWei(amount.toString(), "Ether");
-    // return { amount, price };
-    return { amount: "0", price: "0" };
-  };
+  getEthPrice = async (token: Token, input: any): Promise<Price> => {
+    const someToken = new TokenUni(
+      ChainId.MAINNET, // todo: check config, but as is only read is not big deal
+      token.address,
+      18
+    );
 
-  getTokenPrice = async (asset: Token, input: any): Promise<Price> => {
-    // const amount = await this.getContract(asset)
-    //   .methods.getTokenToEthInputPrice(input)
-    //   .call();
-    // // @ts-ignore
-    // const price = this.web3.utils.fromWei(amount.toString(), "Ether");
+    // note that you may want/need to handle this async code differently,
+    // for example if top-level await is not an option
+    const pair = await Fetcher.fetchPairData(
+      someToken,
+      WETH[someToken.chainId]
+    );
 
-    // return { amount, price };
-    return { amount: "0", price: "0" };
+    const route = new Route([pair], WETH[someToken.chainId]);
+
+    // console.log(route.midPrice.toSignificant(6)); // 201.306
+    // console.log(route.midPrice.invert().toSignificant(6)); // 0.00496756
+
+    return {
+      amount: route.midPrice.toFixed(0),
+      price: route.midPrice.toSignificant(6)
+    };
   };
 
   private getDeadline = () => {
