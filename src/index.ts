@@ -79,12 +79,11 @@ async function monitorPrice() {
     await wallet.fetchBalances();
     const token = dai;
 
-    // const priceCollection = await uniswap.getPriceCollection(
-    //   wallet,
-    //   token,
-    //   eth
-    // );
-    const priceCollection: PriceCollection = undefined;
+    const priceCollection = await uniswap.getPriceCollection(
+      wallet,
+      token,
+      eth
+    );
 
     const recommendation = await oracle.getRecomendation(
       wallet,
@@ -100,11 +99,11 @@ async function monitorPrice() {
 
     if (recommendation.action === Action.BUY) {
       console.log(`Buy ${token.code}...`);
-      await uniswap.buyToken(ETH_AMOUNT, recommendation.price.amount, token);
+      await uniswap.buyToken(ETH_AMOUNT, recommendation.amount, token);
     } else if (recommendation.action === Action.SELL) {
       console.log(`Sell ${token.code}...`);
-      await uniswap.approveToken(recommendation.price.amount, token);
-      await uniswap.sellToken(recommendation.price.amount, token);
+      await uniswap.approveToken(recommendation.amount, token);
+      await uniswap.sellToken(recommendation.amount, token);
     }
 
     if (recommendation.action !== Action.DO_NOTHING) {

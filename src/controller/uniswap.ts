@@ -3,10 +3,9 @@ import Web3 from "web3";
 import { UNISWAP_V2_ABI } from "../abis/uniswapV2Abi";
 import { Token } from "./token";
 import { getConfig, getNetworkPrefix } from "../config";
-import { Price, PriceCollection } from "../model/price";
+import { PriceCollection } from "../model/price";
 import { Wallet } from "../model/wallet";
-import { isEmptyBalance } from "../model/balance";
-import { ChainId, Token as TokenUni, WETH, Fetcher, Route } from "@uniswap/sdk";
+import { Token as TokenUni, WETH, Fetcher, Route, Price } from "@uniswap/sdk";
 
 // todo: generalize to exchange
 export class Uniswap {
@@ -46,7 +45,7 @@ export class Uniswap {
     const result = await contract.methods
       .swapExactETHForTokens(
         "22366615421203459", // que poner aca??? min eth que quiero recibir??
-        [getConfig().WETH, asset.address], // always weth
+        [WETH[getConfig().CHAIN_ID].address, asset.address], // always weth
         process.env.ACCOUNT,
         this.getDeadline()
       )
@@ -87,7 +86,7 @@ export class Uniswap {
       .swapExactTokensForETH(
         tokenAmount.toString(),
         "22366615421203459", // que poner aca??? min eth que quiero recibir??
-        [asset.address, getConfig().WETH], // always weth
+        [asset.address, WETH[getConfig().CHAIN_ID].address], // always weth
         process.env.ACCOUNT,
         this.getDeadline()
       )
@@ -100,29 +99,46 @@ export class Uniswap {
     );
   };
 
-  getEthPrice = async (token: Token, input: any): Promise<Price> => {
-    const someToken = new TokenUni(
-      ChainId.MAINNET, // todo: check config, but as is only read is not big deal
-      token.address,
-      18
-    );
+  getTokenPerEth = async (token: Token): Promise<Price> => {
+    const someToken = new TokenUni(getConfig().CHAIN_ID, token.address, 18);
 
     // note that you may want/need to handle this async code differently,
     // for example if top-level await is not an option
     const pair = await Fetcher.fetchPairData(
       someToken,
-      WETH[someToken.chainId]
+      WETH[getConfig().CHAIN_ID]
     );
 
-    const route = new Route([pair], WETH[someToken.chainId]);
+    const route = new Route([pair], WETH[getConfig().CHAIN_ID]);
 
     // console.log(route.midPrice.toSignificant(6)); // 201.306
     // console.log(route.midPrice.invert().toSignificant(6)); // 0.00496756
 
-    return {
-      amount: route.midPrice.toFixed(0),
-      price: route.midPrice.toSignificant(6)
-    };
+    return route.midPrice;
+  };
+
+  getEthPerToken = async (token: Token): Promise<Price> => {
+    const someToken = new TokenUni(getConfig().CHAIN_ID, token.address, 18);
+    const pair = await Fetcher.fetchPairData(
+      WETH[getConfig().CHAIN_ID],
+      someToken
+    );
+
+    const route = new Route([pair], someToken);
+    return route.midPrice;
+  };
+
+  getTokenPrice = async (token: Token): Promise<Price> => {
+    const daiToken = new TokenUni(
+      getConfig().CHAIN_ID,
+      getConfig().DAI_CONTRACT,
+      18
+    );
+    const someToken = new TokenUni(getConfig().CHAIN_ID, token.address, 18);
+    const pair = await Fetcher.fetchPairData(someToken, daiToken);
+
+    const route = new Route([pair], WETH[getConfig().CHAIN_ID]);
+    return route.midPrice;
   };
 
   private getDeadline = () => {
@@ -144,41 +160,22 @@ export class Uniswap {
   // Return eth->token, token->eth, per unit and per balance
   getPriceCollection = async (
     wallet: Wallet,
-    token: Token,
-    ethToken: Token
+    token: Token
   ): Promise<PriceCollection> => {
-    let ethToToken = { amount: "0", price: "0" };
-    let ethAllToToken = { amount: "0", price: "0" };
-    let tokenToEth = { amount: "0", price: "0" };
-    let tokenAllToEth = { amount: "0", price: "0" };
+    const ethToToken = await this.getTokenPerEth(token);
+    console.log(`1 ETH -> ${ethToToken.toSignificant(6)}${token.code}`);
 
-    const ethBalance = wallet.getBalance(ethToken);
-    console.log(`Eth Balance: ${ethBalance.weiBalance}`);
+    const tokenToEth = await this.getEthPerToken(token);
+    console.log(`${token.code} -> ${tokenToEth.toSignificant(6)} ETH`);
 
-    ethToToken = await this.getEthPrice(token, this.web3.utils.toWei("1"));
-    console.log(`1 ETH -> ${ethToToken.price}${token.code}`);
-
-    ethAllToToken = await this.getEthPrice(token, ethBalance.weiBalance);
-    console.log(
-      `${ethBalance.balance} ETH -> ${ethAllToToken.price}${token.code}`
-    );
-
-    const tokenBalance = wallet.getBalance(token);
-    tokenToEth = await this.getTokenPrice(token, this.web3.utils.toWei("100"));
-    console.log(`100 ${token.code} -> ${tokenToEth.price} ETH`);
-
-    if (!isEmptyBalance(tokenBalance)) {
-      tokenAllToEth = await this.getTokenPrice(token, tokenBalance.weiBalance);
-      console.log(
-        `${tokenBalance.balance} ${token.code} -> ${tokenAllToEth.price} ETH`
-      );
-    }
+    // const tokenUsd = await this.getTokenPrice(token);
+    const tokenUsd = await this.getEthPerToken(token);
+    console.log(`${token.code} -> ${tokenToEth.toSignificant(6)} USD`);
 
     return {
       ethToToken,
-      ethAllToToken,
       tokenToEth,
-      tokenAllToEth
+      tokenUsd
     };
   };
 }

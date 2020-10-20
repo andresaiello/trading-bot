@@ -1,6 +1,6 @@
 import { Token } from "../controller/token";
 import { Wallet } from "./wallet";
-import { Price, PriceCollection } from "./price";
+import { PriceCollection } from "./price";
 
 export enum Action {
   DO_NOTHING,
@@ -10,7 +10,7 @@ export enum Action {
 
 export interface Recomendatiton {
   action: Action;
-  price?: Price;
+  amount?: string;
 }
 
 export interface Oracle {

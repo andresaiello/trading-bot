@@ -1,11 +1,7 @@
-export interface Price {
-  price: string;
-  amount: string;
-}
+import { Price } from "@uniswap/sdk";
 
 export interface PriceCollection {
   ethToToken: Price;
-  ethAllToToken: Price;
   tokenToEth: Price;
-  tokenAllToEth: Price;
+  tokenUsd: Price;
 }

@@ -33,10 +33,7 @@ export class SampleOracle implements Oracle {
     if (process.env.ENV === "prod") {
       return {
         action: Action.DO_NOTHING,
-        price: {
-          amount,
-          price: "0"
-        }
+        amount: "0"
       };
     }
 
@@ -45,20 +42,15 @@ export class SampleOracle implements Oracle {
     if (!isEmptyBalance(balance)) {
       return {
         action: Action.SELL,
-        price: {
-          amount: balance.weiBalance,
-          price: priceCollection?.tokenAllToEth?.price
-        }
+        amount: balance.weiBalance
       };
     }
 
     return {
       action: Action.BUY,
-      price: {
-        amount,
-        price: priceCollection?.ethToToken?.price // todo: upadate this to check the real value price * amount
-      }
+      amount
     };
+
     // if (price.price <= this.ETH_SELL_PRICE) {
     //   // console.log(`Token Price: ${price.amount} ${price.price} ${asset.code}`);
 
