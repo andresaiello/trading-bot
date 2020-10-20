@@ -125,9 +125,7 @@ async function monitorPrice(token: Token) {
 // Check markets every n seconds
 const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL, 10) || 1000; // 1 Second
 intervalHandler = setInterval(async () => {
-  const p = tokens.map(e => {
-    return monitorPrice(e);
-  });
-  Promise.all(p);
-  clearInterval(intervalHandler);
+  for (const elem of tokens) {
+    await monitorPrice(elem);
+  }
 }, POLLING_INTERVAL);
