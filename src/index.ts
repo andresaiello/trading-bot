@@ -42,21 +42,22 @@ const web3 = new Web3(
   new HDWalletProvider(process.env.PRIVATE_KEY, process.env.RPC_URL)
 );
 
-const eth = new Token("ETH");
-
-const dai = new Token(
-  "DAI",
-  getConfig().DAI_CONTRACT, // Token address
-  web3
-);
-dai.init();
-
 const wallet: Wallet = new CryptoWallet(web3);
-wallet.add(eth);
-wallet.add(dai);
+wallet.add(new Token("ETH"));
+
+const tokens = getConfig().TOKENS.map(e => {
+  return new Token(e[0], e[1], web3);
+});
+
+tokens.map(e => {
+  e.init();
+  wallet.add(e);
+});
 
 const uniswap = new Uniswap(web3);
 uniswap.init();
+
+let priceCollectionHistory: PriceCollection[] = [];
 
 const oracle = getDefaultOracle(web3);
 // Minimum eth to swap
@@ -67,7 +68,7 @@ console.log("Eth Amount", ETH_AMOUNT);
 let intervalHandler: any;
 let waitingProcess = false;
 
-async function monitorPrice() {
+async function monitorPrice(token: Token) {
   if (waitingProcess) {
     return;
   }
@@ -77,18 +78,15 @@ async function monitorPrice() {
 
   try {
     await wallet.fetchBalances();
-    const token = dai;
 
-    const priceCollection = await uniswap.getPriceCollection(
-      wallet,
-      token,
-      eth
-    );
+    const priceCollection = await uniswap.getPriceCollection(wallet, token);
+    priceCollectionHistory = [...priceCollectionHistory, priceCollection];
 
     const recommendation = await oracle.getRecomendation(
       wallet,
       token,
       priceCollection,
+      priceCollectionHistory,
       ETH_AMOUNT
     );
 
@@ -117,7 +115,7 @@ async function monitorPrice() {
   } catch (error) {
     console.error(error);
     waitingProcess = false;
-    clearInterval(intervalHandler);
+
     return;
   }
 
@@ -127,5 +125,9 @@ async function monitorPrice() {
 // Check markets every n seconds
 const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL, 10) || 1000; // 1 Second
 intervalHandler = setInterval(async () => {
-  await monitorPrice();
+  const p = tokens.map(e => {
+    return monitorPrice(e);
+  });
+  Promise.all(p);
+  clearInterval(intervalHandler);
 }, POLLING_INTERVAL);

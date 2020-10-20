@@ -18,6 +18,7 @@ export interface Oracle {
     wallet: Wallet,
     asset: Token,
     priceCollection: PriceCollection,
+    priceCollectionHistory: PriceCollection[],
     amount: string
   ) => Promise<Recomendatiton>;
 }

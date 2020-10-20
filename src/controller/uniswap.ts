@@ -5,7 +5,14 @@ import { Token } from "./token";
 import { getConfig, getNetworkPrefix } from "../config";
 import { PriceCollection } from "../model/price";
 import { Wallet } from "../model/wallet";
-import { Token as TokenUni, WETH, Fetcher, Route, Price } from "@uniswap/sdk";
+import {
+  Token as TokenUni,
+  WETH,
+  Fetcher,
+  Route,
+  Price,
+  Currency
+} from "@uniswap/sdk";
 
 // todo: generalize to exchange
 export class Uniswap {
@@ -120,24 +127,36 @@ export class Uniswap {
   getEthPerToken = async (token: Token): Promise<Price> => {
     const someToken = new TokenUni(getConfig().CHAIN_ID, token.address, 18);
     const pair = await Fetcher.fetchPairData(
-      WETH[getConfig().CHAIN_ID],
-      someToken
+      someToken,
+      WETH[getConfig().CHAIN_ID]
     );
 
-    const route = new Route([pair], someToken);
+    const route = new Route([pair], WETH[getConfig().CHAIN_ID]);
     return route.midPrice;
   };
 
   getTokenPrice = async (token: Token): Promise<Price> => {
+    const someToken = new TokenUni(getConfig().CHAIN_ID, token.address, 18);
     const daiToken = new TokenUni(
       getConfig().CHAIN_ID,
       getConfig().DAI_CONTRACT,
       18
     );
-    const someToken = new TokenUni(getConfig().CHAIN_ID, token.address, 18);
-    const pair = await Fetcher.fetchPairData(someToken, daiToken);
 
-    const route = new Route([pair], WETH[getConfig().CHAIN_ID]);
+    if (daiToken.address === someToken.address) {
+      return new Price(Currency.ETHER, Currency.ETHER, "1", "1");
+    }
+
+    const someTokenEthPair = await Fetcher.fetchPairData(
+      someToken,
+      WETH[getConfig().CHAIN_ID]
+    );
+    const DAIEthPair = await Fetcher.fetchPairData(
+      WETH[getConfig().CHAIN_ID],
+      daiToken
+    );
+
+    const route = new Route([DAIEthPair, someTokenEthPair], daiToken);
     return route.midPrice;
   };
 
@@ -166,16 +185,17 @@ export class Uniswap {
     console.log(`1 ETH -> ${ethToToken.toSignificant(6)}${token.code}`);
 
     const tokenToEth = await this.getEthPerToken(token);
-    console.log(`${token.code} -> ${tokenToEth.toSignificant(6)} ETH`);
+    console.log(`${token.code} -> ${tokenToEth.invert().toSignificant(6)} ETH`);
 
-    // const tokenUsd = await this.getTokenPrice(token);
-    const tokenUsd = await this.getEthPerToken(token);
-    console.log(`${token.code} -> ${tokenToEth.toSignificant(6)} USD`);
+    const tokenUsd = await this.getTokenPrice(token);
+    console.log(`${token.code} -> ${tokenUsd.invert().toSignificant(6)} USD`);
 
     return {
       ethToToken,
       tokenToEth,
-      tokenUsd
+      tokenUsd,
+      tokenCode: token.code,
+      date: new Date()
     };
   };
 }
