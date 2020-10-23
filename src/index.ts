@@ -24,6 +24,7 @@ import { Uniswap } from "./controller/uniswap";
 import { Wallet, CryptoWallet } from "./model/wallet";
 import { getConfig } from "./config";
 import { BotService } from "./service/botService";
+import { testTools } from "./controller/oracles/tools";
 
 // initialize configuration
 dotenv.config();
@@ -77,3 +78,6 @@ intervalHandler = setInterval(async () => {
   }
   waitingProcess = false;
 }, POLLING_INTERVAL);
+
+clearInterval(intervalHandler);
+testTools();

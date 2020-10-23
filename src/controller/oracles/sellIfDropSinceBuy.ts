@@ -3,6 +3,7 @@ import Web3 from "web3";
 import _ from "lodash";
 import Big from "big.js";
 import { Oracle, Recomendatiton, Action, Severity } from "../../model/oracle";
+import { getLastAction } from "./tools";
 import { Wallet } from "../../model/wallet";
 import { Token } from "../token";
 import { isEmptyBalance } from "../../model/balance";
@@ -15,21 +16,6 @@ export class SellIfDropSinceBuy implements Oracle {
   constructor(web3: Web3) {
     this.web3 = web3;
   }
-
-  private getMaxPrice = (
-    priceCollectionHistory: PriceCollection[],
-    date: Date
-  ) => {
-    const filteredList = priceCollectionHistory.filter(e => e.date > date);
-    const maxPrice = _.maxBy(filteredList, e => e.tokenUsd);
-    return maxPrice;
-  };
-
-  private getLastAction = (token: Token, actions: Recomendatiton[]) => {
-    const filteredList = actions.filter(e => e.token.code === token.code);
-    const sorted = _.sortBy(filteredList, e => e.date);
-    return sorted.length > 0 ? sorted[0] : undefined;
-  };
 
   getRecomendation = async (
     wallet: Wallet,
@@ -54,7 +40,7 @@ export class SellIfDropSinceBuy implements Oracle {
       };
     }
 
-    const lastAction = this.getLastAction(token, actions);
+    const lastAction = getLastAction(token, actions);
     if (
       lastAction.usdPrice.times(new Big("0.90")).gte(priceCollection.tokenUsd)
     ) {

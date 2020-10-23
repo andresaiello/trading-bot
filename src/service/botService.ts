@@ -13,6 +13,7 @@ import {
 } from "../controller/oracles/oracle";
 import { Wallet } from "../model/wallet";
 import { PriceCollection } from "../model/price";
+import { sortBySeverityHightFirst } from "../controller/oracles/tools";
 
 export class BotService {
   private static instance: BotService;
@@ -75,9 +76,7 @@ export class BotService {
   ): Recomendatiton | undefined => {
     const r = recomendatitons.filter(e => e.action !== Action.DO_NOTHING);
     if (r.length > 0) {
-      const sorted = _.sortBy(r, e => {
-        return e.severity;
-      });
+      const sorted = sortBySeverityHightFirst(r);
       return sorted[0];
     } else return undefined;
   };
