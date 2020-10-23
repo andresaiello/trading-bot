@@ -8,9 +8,19 @@ export enum Action {
   SELL
 }
 
+export enum Severity {
+  HIGHT,
+  MIDLE,
+  LOW
+}
+
 export interface Recomendatiton {
   action: Action;
-  amount?: string;
+  token: Token;
+  severity?: Severity;
+  date?: Date;
+  ethAmount?: string;
+  tokenAmount?: string;
 }
 
 export interface Oracle {
@@ -19,6 +29,6 @@ export interface Oracle {
     asset: Token,
     priceCollection: PriceCollection,
     priceCollectionHistory: PriceCollection[],
-    amount: string
+    actions: Recomendatiton[]
   ) => Promise<Recomendatiton>;
 }

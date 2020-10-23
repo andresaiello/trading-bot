@@ -21,11 +21,9 @@ import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
 import { Token } from "./controller/token";
 import { Uniswap } from "./controller/uniswap";
-import { Action } from "./model/oracle";
-import { getDefaultOracle } from "./controller/oracles/oracle";
 import { Wallet, CryptoWallet } from "./model/wallet";
 import { getConfig } from "./config";
-import { PriceCollection } from "./model/price";
+import { BotService } from "./service/botService";
 
 // initialize configuration
 dotenv.config();
@@ -57,75 +55,25 @@ tokens.map(e => {
 const uniswap = new Uniswap(web3);
 uniswap.init();
 
-let priceCollectionHistory: PriceCollection[] = [];
-
-const oracle = getDefaultOracle(web3);
-// Minimum eth to swap
-// @ts-ignore
-const ETH_AMOUNT = web3.utils.toWei("0.25", "Ether");
-console.log("Eth Amount", ETH_AMOUNT);
-
 let intervalHandler: any;
 let waitingProcess = false;
 
-async function monitorPrice(token: Token) {
-  if (waitingProcess) {
-    return;
-  }
-
-  console.log("Checking price...");
-  waitingProcess = true;
-
-  try {
-    await wallet.fetchBalances();
-
-    const priceCollection = await uniswap.getPriceCollection(wallet, token);
-    priceCollectionHistory = [...priceCollectionHistory, priceCollection];
-
-    const recommendation = await oracle.getRecomendation(
-      wallet,
-      token,
-      priceCollection,
-      priceCollectionHistory,
-      ETH_AMOUNT
-    );
-
-    if (recommendation.action !== Action.DO_NOTHING) {
-      // Show balance in console
-      await wallet.showBalances();
-    }
-
-    if (recommendation.action === Action.BUY) {
-      console.log(`Buy ${token.code}...`);
-      await uniswap.buyToken(ETH_AMOUNT, recommendation.amount, token);
-    } else if (recommendation.action === Action.SELL) {
-      console.log(`Sell ${token.code}...`);
-      await uniswap.approveToken(recommendation.amount, token);
-      await uniswap.sellToken(recommendation.amount, token);
-    }
-
-    if (recommendation.action !== Action.DO_NOTHING) {
-      await wallet.fetchBalances();
-      // Show balance in console
-      await wallet.showBalances();
-    }
-
-    // Stop monitoring prices
-    // clearInterval(intervalHandler);
-  } catch (error) {
-    console.error(error);
-    waitingProcess = false;
-
-    return;
-  }
-
-  waitingProcess = false;
-}
+BotService.get().init(web3, wallet, uniswap);
 
 // Check markets every n seconds
 const POLLING_INTERVAL = parseInt(process.env.POLLING_INTERVAL, 10) || 1000; // 1 Second
 intervalHandler = setInterval(async () => {
-  for (const elem of tokens) {
-    await monitorPrice(elem);
+  if (waitingProcess) {
+    return;
   }
+  waitingProcess = true;
+  try {
+    for (const elem of tokens) {
+      await BotService.get().monitorPrice(elem);
+    }
+  } catch (e) {
+    clearInterval(intervalHandler);
+    console.error(e);
+  }
+  waitingProcess = false;
 }, POLLING_INTERVAL);

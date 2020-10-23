@@ -3,7 +3,6 @@ import Web3 from "web3";
 import { Oracle, Recomendatiton } from "../../model/oracle";
 import { Wallet } from "../../model/wallet";
 import { Token } from "../token";
-import { Uniswap } from "../uniswap";
 import { isEmptyBalance } from "../../model/balance";
 import { PriceCollection } from "../../model/price";
 
@@ -26,30 +25,38 @@ export class SampleOracle implements Oracle {
 
   getRecomendation = async (
     wallet: Wallet,
-    asset: Token,
+    token: Token,
     priceCollection: PriceCollection,
-    priceCollectionHistory: PriceCollection[],
-    amount: string
+    priceCollectionHistory: PriceCollection[]
+    actions: Recomendatiton[],
   ): Promise<Recomendatiton> => {
     if (process.env.ENV === "prod") {
       return {
         action: Action.DO_NOTHING,
-        amount: "0"
+        token
       };
     }
 
-    const balance = wallet.getBalance(asset);
+    // Minimum eth to swap
+    // @ts-ignore
+    const amount = this.web3.utils.toWei("0.25", "Ether"); // move this to each oracle
+
+    const balance = wallet.getBalance(token);
 
     if (!isEmptyBalance(balance)) {
       return {
         action: Action.SELL,
-        amount: balance.weiBalance
+        token,
+        ethAmount: "0",
+        tokenAmount: balance.weiBalance
       };
     }
 
     return {
       action: Action.BUY,
-      amount
+      token,
+      ethAmount: amount,
+      tokenAmount: "0"
     };
 
     // if (price.price <= this.ETH_SELL_PRICE) {

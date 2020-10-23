@@ -33,17 +33,8 @@ export class Uniswap {
     );
   }
 
-  buyToken = async (ethAmount: string, tokenAmount: string, asset: Token) => {
-    console.log(
-      "Buy ",
-      asset.code,
-      " ETH: ",
-      ethAmount,
-      ", ",
-      asset.code,
-      ": ",
-      tokenAmount
-    );
+  buyToken = async (ethAmount: string, asset: Token) => {
+    console.log("Buy ", asset.code, " ETH: ", ethAmount, ", ", asset.code);
     const contract = this.proxyContract;
 
     const settings = { ...this.getSetting(), value: ethAmount };
