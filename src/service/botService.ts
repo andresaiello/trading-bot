@@ -12,7 +12,7 @@ import { PriceCollection } from "../model/price";
 export class BotService {
   private static instance: BotService;
 
-  //private web3: Web3;
+  // private web3: Web3;
   private oracles: Oracle[];
   private wallet: Wallet;
   private uniswap: Uniswap;
@@ -31,7 +31,7 @@ export class BotService {
   };
 
   public init = (web3: Web3, wallet: Wallet, uniswap: Uniswap) => {
-    //this.web3 = web3;
+    // this.web3 = web3;
     this.wallet = wallet;
     this.uniswap = uniswap;
     this.oracles = [new SampleOracle(web3)];
@@ -104,7 +104,7 @@ export class BotService {
       }
     } catch (error) {
       console.error(error);
-      return;
+      return true;
     }
   };
 }

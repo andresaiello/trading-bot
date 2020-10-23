@@ -27,8 +27,8 @@ export class SampleOracle implements Oracle {
     wallet: Wallet,
     token: Token,
     priceCollection: PriceCollection,
-    priceCollectionHistory: PriceCollection[]
-    actions: Recomendatiton[],
+    priceCollectionHistory: PriceCollection[],
+    actions: Recomendatiton[]
   ): Promise<Recomendatiton> => {
     if (process.env.ENV === "prod") {
       return {
