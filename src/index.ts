@@ -79,5 +79,5 @@ intervalHandler = setInterval(async () => {
   waitingProcess = false;
 }, POLLING_INTERVAL);
 
-clearInterval(intervalHandler);
+//clearInterval(intervalHandler);
 testTools();
