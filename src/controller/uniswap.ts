@@ -1,5 +1,6 @@
 // @ts-ignore
 import Web3 from "web3";
+import Big from "big.js";
 import { UNISWAP_V2_ABI } from "../abis/uniswapV2Abi";
 import { Token } from "./token";
 import { getConfig, getNetworkPrefix } from "../config";
@@ -172,14 +173,17 @@ export class Uniswap {
     wallet: Wallet,
     token: Token
   ): Promise<PriceCollection> => {
-    const ethToToken = await this.getTokenPerEth(token);
-    console.log(`1 ETH -> ${ethToToken.toSignificant(6)}${token.code}`);
+    const ethToTokenPrice = await this.getTokenPerEth(token);
+    const ethToToken = new Big(ethToTokenPrice.toSignificant(6));
+    console.log(`1 ETH -> ${ethToToken.toFixed(6)}${token.code}`);
 
-    const tokenToEth = await this.getEthPerToken(token);
-    console.log(`${token.code} -> ${tokenToEth.invert().toSignificant(6)} ETH`);
+    const tokenToEthPrice = await this.getEthPerToken(token);
+    const tokenToEth = new Big(tokenToEthPrice.invert().toSignificant(6));
+    console.log(`${token.code} -> ${tokenToEth.toFixed(6)} ETH`);
 
-    const tokenUsd = await this.getTokenPrice(token);
-    console.log(`${token.code} -> ${tokenUsd.invert().toSignificant(6)} USD`);
+    const tokenUsdPrice = await this.getTokenPrice(token);
+    const tokenUsd = new Big(tokenUsdPrice.invert().toSignificant(6));
+    console.log(`${token.code} -> ${tokenUsd.toFixed(6)} USD`);
 
     return {
       ethToToken,

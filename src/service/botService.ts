@@ -1,11 +1,16 @@
 // @ts-ignore
 import Web3 from "web3";
+import _ from "lodash";
 import { Oracle, Recomendatiton } from "../model/oracle";
-
 import { Token } from "../controller/token";
 import { Uniswap } from "../controller/uniswap";
 import { Action } from "../model/oracle";
-import { SampleOracle } from "../controller/oracles/oracle";
+import {
+  SampleOracle,
+  SellIfBigDrop,
+  SellIfSmallDrop,
+  SellIfDropSinceBuy
+} from "../controller/oracles/oracle";
 import { Wallet } from "../model/wallet";
 import { PriceCollection } from "../model/price";
 
@@ -34,7 +39,12 @@ export class BotService {
     // this.web3 = web3;
     this.wallet = wallet;
     this.uniswap = uniswap;
-    this.oracles = [new SampleOracle(web3)];
+    this.oracles = [
+      new SampleOracle(web3),
+      new SellIfBigDrop(web3),
+      new SellIfSmallDrop(web3),
+      new SellIfDropSinceBuy(web3)
+    ];
   };
 
   private getRecommendations = async (
@@ -52,7 +62,10 @@ export class BotService {
         this.actions
       );
 
-      recommendations = [...recommendations, recommendation];
+      recommendations = [
+        ...recommendations,
+        { ...recommendation, usdPrice: priceCollection.tokenUsd }
+      ];
     }
     return recommendations;
   };
@@ -60,9 +73,13 @@ export class BotService {
   private chooseRecomendation = (
     recomendatitons: Recomendatiton[]
   ): Recomendatiton | undefined => {
-    if (recomendatitons.length > 0)
-      return recomendatitons.find(e => e.action !== Action.DO_NOTHING);
-    else return undefined;
+    const r = recomendatitons.filter(e => e.action !== Action.DO_NOTHING);
+    if (r.length > 0) {
+      const sorted = _.sortBy(r, e => {
+        return e.severity;
+      });
+      return sorted[0];
+    } else return undefined;
   };
 
   public monitorPrice = async (token: Token) => {

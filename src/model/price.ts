@@ -1,9 +1,9 @@
-import { Price } from "@uniswap/sdk";
+import Big from "big.js";
 
 export interface PriceCollection {
-  ethToToken: Price;
-  tokenToEth: Price;
-  tokenUsd: Price;
+  ethToToken: Big;
+  tokenToEth: Big;
+  tokenUsd: Big;
   tokenCode: string;
   date: Date;
 }

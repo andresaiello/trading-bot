@@ -1,16 +1,10 @@
 // @ts-ignore
 import Web3 from "web3";
-import { Oracle, Recomendatiton } from "../../model/oracle";
+import { Oracle, Recomendatiton, Action } from "../../model/oracle";
 import { Wallet } from "../../model/wallet";
 import { Token } from "../token";
 import { isEmptyBalance } from "../../model/balance";
 import { PriceCollection } from "../../model/price";
-
-export enum Action {
-  DO_NOTHING,
-  BUY,
-  SELL
-}
 
 export class SampleOracle implements Oracle {
   // This oracle if have balance sell and if not buy if price is less than X

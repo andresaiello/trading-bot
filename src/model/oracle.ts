@@ -1,3 +1,4 @@
+import Big from "big.js";
 import { Token } from "../controller/token";
 import { Wallet } from "./wallet";
 import { PriceCollection } from "./price";
@@ -17,6 +18,7 @@ export enum Severity {
 export interface Recomendatiton {
   action: Action;
   token: Token;
+  usdPrice?: Big;
   severity?: Severity;
   date?: Date;
   ethAmount?: string;
