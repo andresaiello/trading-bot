@@ -14,7 +14,7 @@ export class SampleOracle implements Oracle {
   constructor(web3: Web3) {
     this.web3 = web3;
     // @ts-ignore
-    //this.ETH_SELL_PRICE = web3.utils.toWei("400", "Ether"); // 400 Dai a.k.a. $400 USD
+    // this.ETH_SELL_PRICE = web3.utils.toWei("400", "Ether"); // 400 Dai a.k.a. $400 USD
   }
 
   getRecomendation = async (
