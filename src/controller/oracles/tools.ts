@@ -3,6 +3,7 @@ import Big from "big.js";
 import { Action, Recomendatiton, Severity } from "../../model/oracle";
 import { Token } from "../token";
 import { PriceCollection } from "../../model/price";
+import { Balance } from "../../model/balance";
 
 export const getMaxPrice = (
   priceCollectionHistory: PriceCollection[],
@@ -93,41 +94,41 @@ export const testTools = () => {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date1,
-      tokenAmount: "1"
+      tokenAmount: new Balance("1")
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date6,
-      tokenAmount: "2"
+      tokenAmount: new Balance("2")
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date2,
-      tokenAmount: "3"
+      tokenAmount: new Balance("3")
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date3,
-      tokenAmount: "4"
+      tokenAmount: new Balance("4")
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date5,
-      tokenAmount: "5"
+      tokenAmount: new Balance("5")
     },
     {
       token: new Token("EXO1"),
       action: Action.BUY,
       date: date6,
-      tokenAmount: "6"
+      tokenAmount: new Balance("6")
     }
   ]);
 
-  if (ret2.tokenAmount !== "2") {
+  if (!ret2.tokenAmount.eq(new Balance("2"))) {
     console.log("Error");
     console.log(ret2);
   } else {
@@ -139,42 +140,42 @@ export const testTools = () => {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date1,
-      tokenAmount: "1",
+      tokenAmount: new Balance("1"),
       severity: Severity.MIDLE
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date6,
-      tokenAmount: "2",
+      tokenAmount: new Balance("2"),
       severity: Severity.LOW
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date2,
-      tokenAmount: "3",
+      tokenAmount: new Balance("3"),
       severity: Severity.HIGHT
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date3,
-      tokenAmount: "4",
+      tokenAmount: new Balance("4"),
       severity: Severity.LOW
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date5,
-      tokenAmount: "5",
+      tokenAmount: new Balance("5"),
       severity: Severity.HIGHT
     },
     {
       token: new Token("EXO"),
       action: Action.BUY,
       date: date6,
-      tokenAmount: "6",
+      tokenAmount: new Balance("6"),
       severity: Severity.MIDLE
     }
   ]);

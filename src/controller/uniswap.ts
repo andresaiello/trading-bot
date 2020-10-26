@@ -14,6 +14,7 @@ import {
   Price,
   Currency
 } from "@uniswap/sdk";
+import { Balance } from "../model/balance";
 
 // todo: generalize to exchange
 export class Uniswap {
@@ -34,7 +35,9 @@ export class Uniswap {
     );
   }
 
-  buyToken = async (ethAmount: string, asset: Token) => {
+  buyToken = async (value: Balance, asset: Token) => {
+    const ethAmount = this.web3.utils.toWei(value.toWei());
+
     console.log("Buy ", asset.code, " ETH: ", ethAmount, ", ", asset.code);
     const contract = this.proxyContract;
 
@@ -57,7 +60,7 @@ export class Uniswap {
   };
 
   // todo: add min eth to buy
-  approveToken = async (tokenAmount: string, asset: Token) => {
+  approveToken = async (tokenAmount: Balance, asset: Token) => {
     const contract = asset.getContract();
 
     // Approving Swap
@@ -74,7 +77,9 @@ export class Uniswap {
   };
 
   // todo: add min eth to buy
-  sellToken = async (tokenAmount: string, asset: Token) => {
+  sellToken = async (value: Balance, asset: Token) => {
+    const tokenAmount = this.web3.utils.toWei(value.toWei());
+
     console.log("Sell ", asset.code, ": ", tokenAmount);
 
     const contract = this.proxyContract;

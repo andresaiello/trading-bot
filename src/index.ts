@@ -21,7 +21,9 @@ import Web3 from "web3";
 import HDWalletProvider from "@truffle/hdwallet-provider";
 import { Token } from "./controller/token";
 import { Uniswap } from "./controller/uniswap";
-import { Wallet, CryptoWallet } from "./model/wallet";
+import { Wallet } from "./model/wallet";
+import { CryptoWallet } from "./model/cryptoWallet";
+import { TestWallet } from "./model/testWallet";
 import { getConfig } from "./config";
 import { BotService } from "./service/botService";
 import { testTools } from "./controller/oracles/tools";
@@ -37,11 +39,14 @@ const server = http
   .listen(PORT, () => console.log(`Listening on ${PORT}`));
 
 // WEB3 CONFIG
+const useRealWallet = process.env.REAL_WALLET === "true";
 const web3 = new Web3(
   new HDWalletProvider(process.env.PRIVATE_KEY, process.env.RPC_URL)
 );
 
-const wallet: Wallet = new CryptoWallet(web3);
+const wallet: Wallet = useRealWallet
+  ? new CryptoWallet(web3)
+  : new TestWallet(web3);
 wallet.add(new Token("ETH"));
 
 const tokens = getConfig().TOKENS.map(e => {
@@ -59,6 +64,7 @@ uniswap.init();
 let intervalHandler: any;
 let waitingProcess = false;
 
+BotService.shouldUseRealWallet(useRealWallet);
 BotService.get().init(web3, wallet, uniswap);
 
 // Check markets every n seconds
@@ -79,5 +85,5 @@ intervalHandler = setInterval(async () => {
   waitingProcess = false;
 }, POLLING_INTERVAL);
 
-//clearInterval(intervalHandler);
+// clearInterval(intervalHandler);
 testTools();

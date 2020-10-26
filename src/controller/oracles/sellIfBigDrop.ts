@@ -45,12 +45,10 @@ export class SellIfBigDrop implements Oracle {
     if (
       maxPrice.tokenUsd.times(new Big("0.85")).gte(priceCollection.tokenUsd)
     ) {
-      const amount = this.web3.utils.toWei(balance.weiBalance);
-
       return {
         action: Action.SELL,
         token,
-        tokenAmount: amount,
+        tokenAmount: balance,
         severity: Severity.HIGHT
       };
     }

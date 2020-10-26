@@ -8,6 +8,7 @@ import { Wallet } from "../../model/wallet";
 import { Token } from "../token";
 import { isEmptyBalance } from "../../model/balance";
 import { PriceCollection } from "../../model/price";
+import { Balance } from "../../model/balance";
 
 export class SellIfSmallDrop implements Oracle {
   // This oracle sell half of token if drops 5%
@@ -45,13 +46,12 @@ export class SellIfSmallDrop implements Oracle {
     if (
       maxPrice.tokenUsd.times(new Big("0.95")).gte(priceCollection.tokenUsd)
     ) {
-      const halfBalance = new Big(balance.balance).times(new Big("0.5"));
-      const amount = this.web3.utils.toWei(halfBalance.toFixed(6));
+      const halfBalance = new Balance(new Big(balance).times(new Big("0.5")));
 
       return {
         action: Action.SELL,
         token,
-        tokenAmount: amount,
+        tokenAmount: halfBalance,
         severity: Severity.MIDLE
       };
     }

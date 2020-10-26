@@ -17,6 +17,7 @@ import { sortBySeverityHightFirst } from "../controller/oracles/tools";
 
 export class BotService {
   private static instance: BotService;
+  private static useRealWallet: boolean;
 
   // private web3: Web3;
   private oracles: Oracle[];
@@ -28,6 +29,10 @@ export class BotService {
   constructor() {
     this.oracles = [];
   }
+
+  static shouldUseRealWallet = (useRealWallet: boolean) => {
+    BotService.useRealWallet = useRealWallet;
+  };
 
   static get = (): BotService => {
     if (!BotService.instance) {
@@ -100,7 +105,7 @@ export class BotService {
       );
       const recommendation = this.chooseRecomendation(recommendations);
 
-      if (recommendation) {
+      if (BotService.useRealWallet && recommendation) {
         this.actions = [...this.actions, recommendation];
         // Show balance in console
         await wallet.showBalances();
@@ -113,6 +118,8 @@ export class BotService {
           await uniswap.approveToken(recommendation.tokenAmount, token);
           await uniswap.sellToken(recommendation.tokenAmount, token);
         }
+
+        wallet.processAction(recommendation);
 
         await wallet.fetchBalances();
         // Show balance in console

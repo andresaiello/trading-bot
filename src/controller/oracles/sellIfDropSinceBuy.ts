@@ -44,12 +44,10 @@ export class SellIfDropSinceBuy implements Oracle {
     if (
       lastAction.usdPrice.times(new Big("0.90")).gte(priceCollection.tokenUsd)
     ) {
-      const amount = this.web3.utils.toWei(balance.weiBalance);
-
       return {
         action: Action.SELL,
         token,
-        tokenAmount: amount,
+        tokenAmount: balance,
         severity: Severity.HIGHT
       };
     }
