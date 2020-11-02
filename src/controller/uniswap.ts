@@ -35,13 +35,21 @@ export class Uniswap {
     );
   }
 
-  buyToken = async (value: Balance, asset: Token) => {
+  buyToken = async (
+    value: Balance,
+    asset: Token,
+    gasPriceInput: number = 80,
+    gasLimit: number = 8000000
+  ) => {
     const ethAmount = this.web3.utils.toWei(value.toWei());
 
     console.log("Buy ", asset.code, " ETH: ", ethAmount, ", ", asset.code);
     const contract = this.proxyContract;
 
-    const settings = { ...this.getSetting(), value: ethAmount };
+    const settings = {
+      ...this.getSetting(gasPriceInput, gasLimit),
+      value: ethAmount
+    };
     // Perform Swap
     console.log("Performing swap...");
     const result = await contract.methods
@@ -60,14 +68,19 @@ export class Uniswap {
   };
 
   // todo: add min eth to buy
-  approveToken = async (tokenAmount: Balance, asset: Token) => {
+  approveToken = async (
+    tokenAmount: Balance,
+    asset: Token,
+    gasPriceInput: number = 80,
+    gasLimit: number = 8000000
+  ) => {
     const contract = asset.getContract();
 
     // Approving Swap
     console.log("Approving swap...");
     const result = await contract.methods
       .approve(getConfig().UNI_ROUTER, getConfig().MAX_AMOUNT_TO_SELL)
-      .send(this.getSetting());
+      .send(this.getSetting(gasPriceInput, gasLimit));
 
     console.log(
       `Successful approve: https://${getNetworkPrefix()}etherscan.io/tx/${
@@ -77,7 +90,12 @@ export class Uniswap {
   };
 
   // todo: add min eth to buy
-  sellToken = async (value: Balance, asset: Token) => {
+  sellToken = async (
+    value: Balance,
+    asset: Token,
+    gasPriceInput: number = 80,
+    gasLimit: number = 8000000
+  ) => {
     const tokenAmount = this.web3.utils.toWei(value.toWei());
 
     console.log("Sell ", asset.code, ": ", tokenAmount);
@@ -94,7 +112,7 @@ export class Uniswap {
         process.env.ACCOUNT,
         this.getDeadline()
       )
-      .send(this.getSetting());
+      .send(this.getSetting(gasPriceInput, gasLimit));
 
     console.log(
       `Successful Swap: https://${getNetworkPrefix()}etherscan.io/tx/${
@@ -164,11 +182,14 @@ export class Uniswap {
     return now + 60 * 10; // add 60 seconds
   };
 
-  private getSetting = () => {
+  private getSetting = (
+    gasPriceInput: number = 80,
+    gasLimit: number = 8000000
+  ) => {
     // Transaction Settings
     return {
-      gasLimit: 8000000, // Override gas settings: https://github.com/ethers-io/ethers.js/issues/469
-      gasPrice: this.web3.utils.toWei("80", "Gwei"),
+      gasLimit, // Override gas settings: https://github.com/ethers-io/ethers.js/issues/469
+      gasPrice: this.web3.utils.toWei(gasPriceInput.toString(10), "Gwei"),
       from: process.env.ACCOUNT // Use your account here
     };
   };
